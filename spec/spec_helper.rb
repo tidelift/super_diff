@@ -1,13 +1,15 @@
 require "pp"
 
-begin
-  require "pry-byebug"
-rescue LoadError
-end
+if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.2")
+  begin
+    require "pry-byebug"
+  rescue LoadError
+  end
 
-begin
-  require "pry-nav"
-rescue LoadError
+  begin
+    require "pry-nav"
+  rescue LoadError
+  end
 end
 
 require "climate_control"
@@ -27,20 +29,19 @@ begin
 
   ActiveRecord::Base.establish_connection(
     adapter: "sqlite3",
-    database: ":memory:",
+    database: ":memory:"
   )
 rescue LoadError
   active_record_available = false
 end
 
-Dir.glob(File.expand_path("support/**/*.rb", __dir__)).
-  sort.
-  reject do |file|
+Dir
+  .glob(File.expand_path("support/**/*.rb", __dir__))
+  .sort
+  .reject do |file|
     file.include?("/models/active_record/") && !active_record_available
-  end.
-  each do |file|
-    require file
   end
+  .each { |file| require file }
 
 RSpec.configure do |config|
   config.include(SuperDiff::UnitTests, type: :unit)
@@ -61,18 +62,14 @@ RSpec.configure do |config|
   config.disable_monkey_patching!
   config.warnings = true
 
-  if !["true", "1"].include?(ENV["CI"])
-    config.default_formatter = "documentation"
-  end
+  config.default_formatter = "documentation" if !%w[true 1].include?(ENV["CI"])
 
   config.filter_run_excluding active_record: true unless active_record_available
 
   config.order = :random
   Kernel.srand config.seed
 
-  if ENV["CI"] == "true"
-    config.color_mode = :on
-  end
+  config.color_mode = :on if ENV["CI"] == "true"
 end
 
 require "warnings_logger"
