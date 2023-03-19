@@ -6,9 +6,22 @@ module SuperDiff
     PLACEHOLDER = "∙∙∙".freeze
 
     def self.guarding_recursion_of(*objects, &block)
+      # recursion_counter is being added as a crude fix to the problem described in
+      # https://github.com/mcmire/super_diff/issues/160
+      # If that issue receives a more elegant solution, this can be removed from
+      # the Tidelift version of the code.
+      Thread.current["recursion_counter"] ||= 0
+      Thread.current["recursion_counter"] = Thread.current[
+        "recursion_counter"
+      ] + 1
+
       already_seen_objects, first_seen_objects =
         objects.partition do |object|
-          !SuperDiff.primitive?(object) && already_seen?(object)
+          !SuperDiff.primitive?(object) &&
+            (
+              Thread.current["recursion_counter"] > 1000 ||
+                already_seen?(object)
+            )
         end
 
       first_seen_objects.each do |object|
