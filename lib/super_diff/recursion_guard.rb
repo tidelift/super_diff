@@ -7,7 +7,7 @@ module SuperDiff
     RECURSION_GUARD_COUNTER_KEY = "super_diff_recursion_guard_counter".freeze
 
     def self.guarding_recursion_of(*objects, &block)
-      # recursion_counter is being added as a crude fix to the problem described in
+      # This recursion counter is being added as a crude fix to the problem described in
       # https://github.com/mcmire/super_diff/issues/160
       # If that issue receives a more elegant solution, this can be removed from
       # the Tidelift version of the code.
@@ -15,6 +15,7 @@ module SuperDiff
       Thread.current[RECURSION_GUARD_COUNTER_KEY] = Thread.current[
         RECURSION_GUARD_COUNTER_KEY
       ] + 1
+      pp "recursion counter: #{Thread.current[RECURSION_GUARD_COUNTER_KEY]}"
 
       already_seen_objects, first_seen_objects =
         objects.partition do |object|
