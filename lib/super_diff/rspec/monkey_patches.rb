@@ -21,6 +21,9 @@ module RSpec
     module ExpectationHelper
       SuperDiff.insert_singleton_overrides(self) do
         def handle_failure(matcher, message, failure_message_method)
+          Thread.current[
+            SuperDiff::RecursionGuard::RECURSION_GUARD_COUNTER_KEY
+          ] = 0
           message = message.call if message.respond_to?(:call)
           message ||= matcher.__send__(failure_message_method)
 
