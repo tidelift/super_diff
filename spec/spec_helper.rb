@@ -70,6 +70,10 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 
   config.color_mode = :on if ENV["CI"] == "true"
+
+  config.before do
+    Thread.current[SuperDiff::RecursionGuard::RECURSION_GUARD_COUNTER_KEY] = 0
+  end
 end
 
 require "warnings_logger"

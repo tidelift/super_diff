@@ -4,11 +4,28 @@ module SuperDiff
   module RecursionGuard
     RECURSION_GUARD_KEY = "super_diff_recursion_guard_key".freeze
     PLACEHOLDER = "∙∙∙".freeze
+    RECURSION_GUARD_COUNTER_KEY = "super_diff_recursion_guard_counter".freeze
+    RECURSION_GUARD_COUNTER_MAX_OBJECTS_SEEN = 1000
 
     def self.guarding_recursion_of(*objects, &block)
+      # This recursion counter is being added as a crude fix to the problem described in
+      # https://github.com/mcmire/super_diff/issues/160
+      # If that issue receives a more elegant solution, this can be removed from
+      # the Tidelift version of the code.
+      # Note: This is counting total objects seen, not necessarily recursed
+      Thread.current[RECURSION_GUARD_COUNTER_KEY] ||= 0
+      Thread.current[RECURSION_GUARD_COUNTER_KEY] = Thread.current[
+        RECURSION_GUARD_COUNTER_KEY
+      ] + 1
+
       already_seen_objects, first_seen_objects =
         objects.partition do |object|
-          !SuperDiff.primitive?(object) && already_seen?(object)
+          !SuperDiff.primitive?(object) &&
+            (
+              Thread.current[RECURSION_GUARD_COUNTER_KEY] >
+                RECURSION_GUARD_COUNTER_MAX_OBJECTS_SEEN ||
+                already_seen?(object)
+            )
         end
 
       first_seen_objects.each do |object|
